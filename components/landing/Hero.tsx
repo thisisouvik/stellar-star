@@ -6,16 +6,14 @@ import { motion } from "framer-motion";
 import {
   ArrowRight,
   Zap,
-  Shield,
-  Globe,
   CheckCircle2,
   TrendingUp,
   Users,
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/context/AuthContext";
+import { heroAvatars, heroMockMembers, heroProofLabels, heroTrustLogos } from "@/data/landing";
 
 /* ── animation variants ── */
 const fadeUp = {
@@ -47,12 +45,7 @@ const MockSplitCard = () => (
 
     {/* Members */}
     <div className="p-4 space-y-2.5">
-      {[
-        { name: "Rahul", amount: "300", status: "paid", color: "#2DD4BF" },
-        { name: "Aman", amount: "300", status: "pending", color: "#E5E5E5" },
-        { name: "Kiran", amount: "300", status: "pending", color: "#E5E5E5" },
-        { name: "You", amount: "300", status: "paid", color: "#2DD4BF" },
-      ].map((member) => (
+      {heroMockMembers.map((member) => (
         <div key={member.name} className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div
@@ -114,15 +107,6 @@ const FloatingChip = ({
     </div>
   </motion.div>
 );
-
-/* ── Trust logos ── */
-const trustLogos = [
-  { name: "Stellar", abbr: "STL" },
-  { name: "Freighter", abbr: "FRT" },
-  { name: "Horizon", abbr: "HRZ" },
-  { name: "Testnet", abbr: "TST" },
-  { name: "XLM", abbr: "XLM" },
-];
 
 export default function Hero() {
   const { isAuthenticated } = useAuth();
@@ -218,21 +202,16 @@ export default function Hero() {
               {/* Avatars */}
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-2">
-                  {["R", "A", "K", "S"].map((l, i) => (
+                  {heroAvatars.map((avatar) => (
                     <div
-                      key={i}
+                      key={avatar.label}
                       className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white"
                       style={{
-                        backgroundColor: [
-                          "#2DD4BF",
-                          "#0F0F14",
-                          "#0D9488",
-                          "#333",
-                        ][i],
-                        color: i === 0 || i === 2 ? "#0F0F14" : "white",
+                        backgroundColor: avatar.backgroundColor,
+                        color: avatar.color,
                       }}
                     >
-                      {l}
+                      {avatar.label}
                     </div>
                   ))}
                   <div className="w-8 h-8 rounded-full border-2 border-white bg-[#F0F0F0] flex items-center justify-center text-[10px] font-semibold text-[#888]">
@@ -256,10 +235,7 @@ export default function Hero() {
               <div className="hidden sm:block w-px h-8 bg-[#E5E5E5]" />
 
               {/* Proof labels */}
-              {[
-                { icon: Shield, text: "Non-custodial" },
-                { icon: Zap, text: "~5s finality" },
-              ].map(({ icon: Icon, text }) => (
+              {heroProofLabels.map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-1.5">
                   <Icon size={14} className="text-[#134E4A]" />
                   <span className="text-sm font-medium text-[#555]">{text}</span>
@@ -323,7 +299,7 @@ export default function Hero() {
             Built on open, trusted protocols
           </p>
           <div className="flex items-center justify-center flex-wrap gap-4 sm:gap-8">
-            {trustLogos.map((logo) => (
+            {heroTrustLogos.map((logo) => (
               <div
                 key={logo.name}
                 className="flex items-center gap-2 text-[#888] hover:text-[#0F0F14] transition-colors cursor-default"
