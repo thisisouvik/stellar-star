@@ -1,12 +1,7 @@
-export interface NetPayment {
-  from: string;
-  to: string;
-  amount: string;
-  fromWallet?: string;
-  toWallet?: string;
-}
-
 export interface RawDebt {
+  expenseId: string;
+  fromId: string;
+  toId: string;
   from: string;
   to: string;
   amount: number;
@@ -14,55 +9,45 @@ export interface RawDebt {
   toWallet?: string;
 }
 
+export interface NetPayment {
+  from: string;
+  to: string;
+  amount: string;
+  fromWallet?: string;
+  toWallet?: string;
+  settledDebts: RawDebt[];
+}
+
 export function computeNetPayments(debts: RawDebt[]): NetPayment[] {
-  const balance = new Map<string, number>();
-  const wallets = new Map<string, string>();
+  const grouped = new Map<string, RawDebt[]>();
 
-  debts.forEach(({ from, to, amount, fromWallet, toWallet }) => {
-    balance.set(from, (balance.get(from) ?? 0) - amount);
-    balance.set(to,   (balance.get(to)   ?? 0) + amount);
-    if (fromWallet) wallets.set(from, fromWallet);
-    if (toWallet)   wallets.set(to,   toWallet);
-  });
-
-  const creditors: Array<{ name: string; balance: number }> = [];
-  const debtors:   Array<{ name: string; balance: number }> = [];
-
-  balance.forEach((bal, name) => {
-    const rounded = Math.round(bal * 1e7) / 1e7;
-    if (rounded > 0.0000001)  creditors.push({ name, balance:  rounded });
-    if (rounded < -0.0000001) debtors.push({   name, balance: -rounded });
-  });
-
-  creditors.sort((a, b) => b.balance - a.balance);
-  debtors.sort(  (a, b) => b.balance - a.balance);
+  for (const debt of debts) {
+    const key = `${debt.fromId}_${debt.toId}`;
+    const group = grouped.get(key) ?? [];
+    group.push(debt);
+    grouped.set(key, group);
+  }
 
   const result: NetPayment[] = [];
-
-  let ci = 0, di = 0;
-  while (ci < creditors.length && di < debtors.length) {
-    const creditor = creditors[ci];
-    const debtor   = debtors[di];
-
-    const settle = Math.min(creditor.balance, debtor.balance);
-    const rounded = Math.round(settle * 1e7) / 1e7;
-
+  grouped.forEach((debtsInGroup) => {
+    let total = 0;
+    for (const d of debtsInGroup) {
+      total += d.amount;
+    }
+    const rounded = Math.round(total * 1e7) / 1e7;
+    
     if (rounded > 0.0000001) {
+      const first = debtsInGroup[0];
       result.push({
-        from:       debtor.name,
-        to:         creditor.name,
-        amount:     rounded.toFixed(7),
-        fromWallet: wallets.get(debtor.name),
-        toWallet:   wallets.get(creditor.name),
+        from: first.from,
+        to: first.to,
+        amount: rounded.toFixed(7),
+        fromWallet: first.fromWallet,
+        toWallet: first.toWallet,
+        settledDebts: debtsInGroup,
       });
     }
-
-    creditor.balance -= settle;
-    debtor.balance   -= settle;
-
-    if (creditor.balance < 0.0000001) ci++;
-    if (debtor.balance   < 0.0000001) di++;
-  }
+  });
 
   return result;
 }

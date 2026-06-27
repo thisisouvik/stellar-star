@@ -38,6 +38,9 @@ function deriveRawDebts(expenses: Expense[]): RawDebt[] {
       if (!payer || share.memberId === expense.paidByMemberId) continue;
       if (share.paid) continue;
       debts.push({
+        expenseId:  expense.id,
+        fromId:     share.memberId,
+        toId:       payer.id,
         from:       share.name,
         to:         payer.name,
         amount:     parseFloat(share.amount),
@@ -88,13 +91,11 @@ function NetPaymentRow({
       const signedXDR = await signXDR(xdr, NETWORK_PASSPHRASE);
       const { hash }  = await submitSignedTransaction(signedXDR);
 
-      for (const expense of expenses) {
-        const payer = expense.members.find((m) => m.id === expense.paidByMemberId);
-        if (!payer || payer.name !== payment.to) continue;
-        for (const share of expense.shares) {
-          if (share.name === payment.from && !share.paid) {
-            try { await markSharePaid(expense.id, share.memberId, hash); } catch { /* non-fatal */ }
-          }
+      for (const debt of payment.settledDebts) {
+        try {
+          await markSharePaid(debt.expenseId, debt.fromId, hash);
+        } catch {
+          /* non-fatal */
         }
       }
 
