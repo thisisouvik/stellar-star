@@ -10,6 +10,7 @@ import { ExpenseCard } from "@/components/expenses/ExpenseCard";
 import { ExpenseEmptyState } from "@/components/expenses/ExpenseEmptyState";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { Modal } from "@/components/ui/Modal";
+import { Spinner } from "@/components/ui/Spinner";
 import { useAuth } from "@/context/AuthContext";
 import { useExpense } from "@/hooks/useExpense";
 import { useWallet } from "@/hooks/useWallet";
@@ -18,7 +19,7 @@ import type { Expense } from "@/types/expense";
 export default function ExpensesPage() {
   const { publicKey } = useWallet();
   const { user } = useAuth();
-  const { expenses, deleteExpense } = useExpense();
+  const { expenses, deleteExpense, isLoading, isOffline } = useExpense();
   const [showForm, setShowForm] = useState(false);
 
   return (
@@ -58,7 +59,17 @@ export default function ExpensesPage() {
             )}
           </div>
 
-          {expenses.length === 0 ? (
+          {isOffline && (
+            <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-800">
+              You are currently viewing offline data. Some features may be unavailable.
+            </div>
+          )}
+
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Spinner size={32} className="text-[#2DD4BF]" />
+            </div>
+          ) : expenses.length === 0 ? (
             <ExpenseEmptyState onNew={() => setShowForm(true)} />
           ) : (
             <div className="space-y-3">

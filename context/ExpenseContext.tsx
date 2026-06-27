@@ -23,6 +23,8 @@ interface ExpenseContextType {
   markSharePaid: (expenseId: string, memberId: string, txHash: string) => Promise<void>;
   getExpense: (id: string) => Expense | undefined;
   isLoading: boolean;
+  isOffline: boolean;
+  error: string | null;
 }
 
 
@@ -76,6 +78,8 @@ function expenseToDbRow(expense: Expense, creatorWallet: string) {
 export function ExpenseProvider({ children }: { children: React.ReactNode }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOffline, setIsOffline] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<any>(null);
   const { publicKey } = useWalletContext();
 
@@ -108,8 +112,12 @@ export function ExpenseProvider({ children }: { children: React.ReactNode }) {
           setExpenses(expenses);
           localStorage.setItem(LS_EXPENSES, JSON.stringify(expenses));
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn("Failed to load from Supabase, using localStorage:", err);
+        if (isMounted) {
+          setIsOffline(true);
+          setError(err?.message || "Failed to connect to database");
+        }
         try {
           const raw = localStorage.getItem(LS_EXPENSES);
           if (raw && isMounted) setExpenses(JSON.parse(raw) as Expense[]);
@@ -350,6 +358,8 @@ export function ExpenseProvider({ children }: { children: React.ReactNode }) {
         markSharePaid,
         getExpense,
         isLoading,
+        isOffline,
+        error,
       }}
     >
       {children}

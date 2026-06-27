@@ -11,6 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { ConnectWalletButton } from "@/components/wallet/ConnectWalletButton";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { Modal } from "@/components/ui/Modal";
+import { Spinner } from "@/components/ui/Spinner";
 import { TripCard } from "@/components/trips/TripCard";
 import { TripForm } from "@/components/trips/TripForm";
 import { useToast } from "@/components/ui/Toast";
@@ -47,7 +48,7 @@ function EmptyState({ onNew }: { onNew: () => void }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TripsPage() {
-  const { trips, addTrip, deleteTrip } = useTrip();
+  const { trips, addTrip, deleteTrip, isLoading, isOffline } = useTrip();
   const { expenses } = useExpense();
   const { publicKey } = useWallet();
   const { user } = useAuth();
@@ -130,7 +131,17 @@ export default function TripsPage() {
           </div>
 
           {/* List or empty */}
-          {trips.length === 0 ? (
+          {isOffline && (
+            <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-800">
+              You are currently viewing offline data. Some features may be unavailable.
+            </div>
+          )}
+
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Spinner size={32} className="text-[#2DD4BF]" />
+            </div>
+          ) : trips.length === 0 ? (
             <EmptyState onNew={() => setShowForm(true)} />
           ) : (
             <div className="space-y-3">

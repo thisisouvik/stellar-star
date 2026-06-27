@@ -24,6 +24,8 @@ interface TripContextType {
   settleTrip: (id: string) => void;
   getTrip: (id: string) => Trip | undefined;
   isLoading: boolean;
+  isOffline: boolean;
+  error: string | null;
 }
 
 
@@ -69,6 +71,8 @@ function tripToDbRow(trip: Trip, creatorWallet: string) {
 export function TripProvider({ children }: { children: React.ReactNode }) {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOffline, setIsOffline] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<any>(null);
   const { publicKey } = useWalletContext();
 
@@ -98,8 +102,12 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
           setTrips(trips);
           localStorage.setItem(LS_TRIPS, JSON.stringify(trips));
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn("Failed to load trips from Supabase, using localStorage:", err);
+        if (isMounted) {
+          setIsOffline(true);
+          setError(err?.message || "Failed to connect to database");
+        }
         try {
           const raw = localStorage.getItem(LS_TRIPS);
           if (raw && isMounted) {
@@ -340,6 +348,8 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
         settleTrip,
         getTrip,
         isLoading,
+        isOffline,
+        error,
       }}
     >
       {children}
