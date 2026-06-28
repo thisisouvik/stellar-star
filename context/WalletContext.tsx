@@ -9,7 +9,7 @@ import React, {
   useState,
 } from "react";
 import { getFreighterNetwork, isFreighterInstalled } from "@/lib/freighter";
-import { getWalletsKit, FREIGHTER_ID } from "@/lib/stellar/walletsKit";
+import { getWalletsKit, FREIGHTER_ID, StellarWalletsKit, type WalletId } from "@/lib/stellar/walletsKit";
 import { getXLMBalance } from "@/lib/stellar/getBalance";
 import { LS_PUBLIC_KEY } from "@/lib/utils/constants";
 import type { WalletContextType } from "@/types/wallet";
@@ -64,6 +64,9 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     const savedKey = typeof window !== "undefined"
       ? localStorage.getItem(LS_PUBLIC_KEY)
       : null;
+    const savedWalletId = typeof window !== "undefined"
+      ? localStorage.getItem("StellarStar:walletId") as WalletId | null
+      : null;
 
     if (!savedKey) {
       // No saved key — nothing to restore, mark hydration done immediately
@@ -71,14 +74,20 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Verify Freighter still has the same key before auto-restoring
-    isFreighterInstalled().then((installed) => {
+    const walletId = savedWalletId || FREIGHTER_ID;
+    const wallets = StellarWalletsKit.getSupportedWallets();
+    const wallet = wallets.find((w) => w.id === walletId) || wallets[0];
+
+    // Verify selected wallet is still available/installed before auto-restoring
+    wallet.isInstalled().then((installed) => {
       if (!installed) {
         localStorage.removeItem(LS_PUBLIC_KEY);
+        localStorage.removeItem("StellarStar:walletId");
       } else {
         // Restore silently — do not re-prompt the user
+        getWalletsKit().setWallet(walletId);
         setPublicKey(savedKey);
-        setSelectedWalletId(FREIGHTER_ID);
+        setSelectedWalletId(walletId);
         fetchBalance(savedKey);
         hydrateNetwork();
       }
@@ -111,15 +120,9 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setError(null);
 
     try {
-      const installed = await isFreighterInstalled();
-      if (!installed) {
-        throw new Error(
-          "No Stellar wallet detected. Please install the Freighter browser extension from freighter.app"
-        );
-      }
-
       const kit = getWalletsKit();
       let resolvedAddress = "";
+      let selectedId: WalletId = FREIGHTER_ID;
       let walletError: Error | null = null;
 
       await kit.openModal({
@@ -128,6 +131,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
         onWalletSelected: async (wallet) => {
           kit.setWallet(wallet.id);
+          selectedId = wallet.id;
           const { address } = await kit.getAddress();
           resolvedAddress = address;
         },
@@ -143,8 +147,9 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       setPublicKey(resolvedAddress);
       setNetwork(net);
-      setSelectedWalletId(FREIGHTER_ID);
+      setSelectedWalletId(selectedId);
       localStorage.setItem(LS_PUBLIC_KEY, resolvedAddress);
+      localStorage.setItem("StellarStar:walletId", selectedId);
       toastSuccess(
         "Wallet connected",
         `${resolvedAddress.slice(0, 6)}…${resolvedAddress.slice(-4)} on ${net === "PUBLIC" ? "Mainnet" : "Testnet"}`
@@ -163,7 +168,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsConnecting(false);
     }
-  }, [fetchBalance]);
+  }, [fetchBalance, toastSuccess, toastError]);
 
 
   const disconnect = useCallback(() => {
@@ -174,7 +179,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setSelectedWalletId(null);
     toastInfo("Wallet disconnected");
     localStorage.removeItem(LS_PUBLIC_KEY);
-  }, []);
+    localStorage.removeItem("StellarStar:walletId");
+  }, [toastInfo]);
 
 
   const refreshBalance = useCallback(async () => {

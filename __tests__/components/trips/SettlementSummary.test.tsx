@@ -88,8 +88,8 @@ const expenses: Expense[] = [
 
 describe("SettlementSummary", () => {
   beforeEach(() => {
-    mockUseWallet.mockReturnValue({ publicKey: "G".padEnd(56, "B") });
-    mockUseExpense.mockReturnValue({ markSharePaid: jest.fn() });
+    mockUseWallet.mockReturnValue({ publicKey: "G".padEnd(56, "B") } as any);
+    mockUseExpense.mockReturnValue({ markSharePaid: jest.fn() } as any);
   });
 
   afterEach(() => {
