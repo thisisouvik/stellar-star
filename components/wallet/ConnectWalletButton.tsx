@@ -195,7 +195,6 @@ export function ConnectWalletButton({
   } = useWallet();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [freighterMissing, setFreighterMissing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -209,18 +208,22 @@ export function ConnectWalletButton({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Check Freighter on mount
+  // Check if at least one wallet is installed
+  const [walletMissing, setWalletMissing] = useState(false);
+
   useEffect(() => {
-    import("@/lib/freighter").then(({ isFreighterInstalled }) => {
-      isFreighterInstalled().then((installed) => {
-        if (!installed) setFreighterMissing(true);
+    import("@/lib/stellar/walletsKit").then(({ StellarWalletsKit }) => {
+      const wallets = StellarWalletsKit.getSupportedWallets();
+      Promise.all(wallets.map((w) => w.isInstalled())).then((installedArray) => {
+        const anyInstalled = installedArray.some((installed) => installed);
+        setWalletMissing(!anyInstalled);
       });
     });
   }, []);
 
   // ── Not installed ──────────────────────────────────────────────────────────
 
-  if (freighterMissing && !isConnected) {
+  if (walletMissing && !isConnected) {
     return (
       <a
         href="https://freighter.app"
@@ -233,7 +236,7 @@ export function ConnectWalletButton({
         )}
       >
         <AlertCircle size={14} />
-        Install Freighter
+        Install Wallet
       </a>
     );
   }

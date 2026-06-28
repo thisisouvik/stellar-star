@@ -21,6 +21,8 @@ export type WalletContextType = WalletState & WalletActions;
 
 export const WALLET_IDS = {
   FREIGHTER: "freighter",
+  XBULL:     "xbull",
+  LOBSTR:    "lobstr",
 } as const;
 
 export type WalletId = (typeof WALLET_IDS)[keyof typeof WALLET_IDS];
