@@ -13,7 +13,7 @@ import { NETWORK_PASSPHRASE, STELLAR_EXPLORER, CONTRACT_ID } from "@/lib/utils/c
 import type { SplitShare } from "@/types/expense";
 
 type OnChainStep = "simulating" | "signing" | "sending" | "confirming";
-
+ 
 export type PaymentState =
   | { status: "idle" }
   | { status: "building" }
