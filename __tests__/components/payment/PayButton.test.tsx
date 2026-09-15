@@ -63,7 +63,10 @@ describe("PayButton — rendering", () => {
   it("formats non-XLM asset such as USDC correctly", () => {
     const { container } = renderButton({ amount: "15", asset: "USDC" });
     const cleanText = container.textContent?.replace(/\u00a0/g, " ");
-    expect(cleanText).toContain("Pay USDC 15.0000");
+    // USDC is configured at 2 decimals in ASSET_CONFIGS (its real-world
+    // convention), unlike XLM's 4. Expecting "15.0000" described no behaviour
+    // the app ever had.
+    expect(cleanText).toContain("Pay USDC 15.00");
   });
 
   it("includes the recipient name in the title attribute", () => {

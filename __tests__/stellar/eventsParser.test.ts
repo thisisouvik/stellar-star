@@ -186,10 +186,12 @@ describe("fetchContractEvents", () => {
         latestLedger: 500,
         cursor: "page-1",
       } as any)
+      // Last page: no cursor. fetchContractEvents walks the cursor rather than
+      // page size (a short page is not end-of-stream for Soroban RPC), so a
+      // trailing "page-2" cursor here would correctly provoke a third request.
       .mockResolvedValueOnce({
         events: secondPage,
         latestLedger: 501,
-        cursor: "page-2",
       } as any);
 
     const result = await fetchContractEvents(42, "trip-1");

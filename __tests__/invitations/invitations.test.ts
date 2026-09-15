@@ -450,11 +450,22 @@ describe("Capability-Based Invitations & Placeholder Claims (Issue #171)", () =>
       client,
     );
 
-    // Attacker tries to use Tokyo token to claim Eve's slot in Paris
+    // Attacker tries to use the Tokyo token to claim Eve's slot in Paris.
+    //
+    // The defence is that a slot-bound invite pins the target: the claim
+    // resolves as COALESCE(invite.member_id, p_selected_member_id) and the slot
+    // is then looked up only among the members of the invite's OWN trip. The
+    // attacker-supplied "m-secret-2" is therefore ignored outright rather than
+    // rejected, so this claim must not error — it must simply never touch Paris.
     const attackerClient = db.createClient(ADDR_ATTACKER);
-    await expect(
-      claimTripInvite(token, ADDR_ATTACKER, "m-secret-2", attackerClient),
-    ).rejects.toThrow("MEMBER_NOT_FOUND");
+    const result = await claimTripInvite(token, ADDR_ATTACKER, "m-secret-2", attackerClient);
+
+    expect(result.tripId).toBe("trip-tokyo-2026");
+    expect(result.memberId).toBe("m-bob");
+
+    // The Paris trip is untouched: Eve's slot is still unclaimed.
+    const paris = db.trips.get("trip-paris-secret");
+    expect(paris?.members.find((m) => m.id === "m-secret-2")?.walletAddress).toBe("");
   });
 
   // ── 8. Idempotent Retry ────────────────────────────────────────────────────

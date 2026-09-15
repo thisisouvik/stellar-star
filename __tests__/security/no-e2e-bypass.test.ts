@@ -22,7 +22,6 @@ import { join } from "node:path";
 const shouldRun =
   process.env.RUN_SECURITY_BUILD === "1" || process.env.CI_SECURITY_GATE === "1";
 
-// eslint-disable-next-line jest/no-disabled-tests
 (shouldRun ? test : test.skip)(
   "production build contains no E2E wallet bypass",
   () => {

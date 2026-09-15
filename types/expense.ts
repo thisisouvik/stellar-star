@@ -33,6 +33,14 @@ export interface Expense {
    */
   currency: string;
   /**
+   * Rate used to convert `currency` into the settlement asset at creation time,
+   * as a decimal string. Absent when the expense was entered directly in the
+   * settlement asset (no conversion happened).
+   */
+  exchangeRate?: string;
+  /** ISO timestamp of the `exchangeRate` quote, for provenance. */
+  exchangeRateTimestamp?: string;
+  /**
    * Canonical Stellar asset this expense settles in ("native", "USDC:GA5Z…").
    * Absent on rows created before multi-asset support, which all settle native.
    */

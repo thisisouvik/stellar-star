@@ -32,7 +32,7 @@ const SETUP_SQL = path.join(ROOT, "supabase-setup.sql");
 function stripComments(sql: string): string {
   return sql
     .replace(/\/\*[\s\S]*?\*\//g, "")
-    .split("\n")
+    .split(/\r?\n/)
     .map((line) => line.replace(/--.*$/, ""))
     .join("\n");
 }

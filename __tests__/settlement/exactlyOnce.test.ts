@@ -163,16 +163,17 @@ describe("Exactly-Once Settlement Recording & Concurrency (Issue #156 / Epic #50
     );
 
     // Default mock stubs for external systems
+    // Must match VerifiedPayment exactly: the previous stub carried fields
+    // Horizon verification never returns (txHash, asset, successful, timestamp)
+    // and omitted the ones it does (closedAt, viaPath).
     jest.mocked(verifyPaymentByHash).mockResolvedValue({
-      txHash: "f".repeat(64),
       source: WALLET_ALICE,
       destination: WALLET_PAYER,
       amountStroops: 25000000n,
-      asset: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
-      memo: "Dinner|Alice",
       ledger: 1000,
-      successful: true,
-      timestamp: Date.now(),
+      closedAt: new Date().toISOString(),
+      memo: "Dinner|Alice",
+      viaPath: false,
     });
 
     jest.mocked(checkIsPaid).mockResolvedValue({ paid: false, success: true });

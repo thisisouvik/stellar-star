@@ -59,16 +59,16 @@ interface UseNetPaymentOpts {
   tripId: string;
 }
 
-export interface RawDebt {
-  expenseId: string;
-  fromId: string;
-  toId: string;
-  from: string;
-  to: string;
-  amount: number;
-  fromWallet?: string;
-  toWallet?: string;
-}
+/**
+ * Re-exported from lib/settlement/simplify, the canonical definition.
+ *
+ * This module used to declare its own copy that typed `amount` as `number`,
+ * which both contradicted the exact-arithmetic invariant (money must never pass
+ * through a float) and made the canonical `RawDebt[]` from the settlement layer
+ * unassignable to this hook's own parameters.
+ */
+import type { RawDebt } from "@/lib/settlement/simplify";
+export type { RawDebt };
 
 interface PayNetParams {
   debts: RawDebt[];

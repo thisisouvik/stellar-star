@@ -95,6 +95,68 @@ export type TripInviteRow = {
   updated_at: string;
 };
 
+export type SettlementIntentRow = {
+  id: string;
+  idempotency_key: string;
+  trip_id: string;
+  expense_id: string;
+  member_id: string;
+  payer_wallet: string;
+  member_wallet: string;
+  amount: string;
+  currency: string;
+  status: "pending" | "submitting" | "submitted" | "recorded" | "failed" | "cancelled";
+  tx_hash: string | null;
+  /** `bigint` in Postgres; supabase-js returns it as a number. */
+  ledger: number | null;
+  on_chain: boolean;
+  error_message: string | null;
+  created_by_wallet: string;
+  created_at: string;
+  updated_at: string;
+  expires_at: string;
+};
+
+export type SettlementAttestationRow = {
+  id: string;
+  tx_hash: string;
+  expense_id: string;
+  member: string;
+  /** `numeric(30)` — carried as a string so large values keep full precision. */
+  amount_stroops: string;
+  nonce: string;
+  expires_at: number;
+  signature: string;
+  created_at: string;
+};
+
+export type SponsoredAccountRow = {
+  account: string;
+  /** `numeric(30)` — carried as a string so large values keep full precision. */
+  locked_stroops: string;
+  status: "active" | "revoked" | "reclaimed";
+  created_at_ms: number;
+  last_active_at_ms: number;
+  sponsored_by: string;
+  revoked_at_ms: number | null;
+  created_at: string;
+};
+
+export type SponsorshipInviteRow = {
+  id: string;
+  inviter: string;
+  invitee: string;
+  created_at_ms: number;
+  created_at: string;
+};
+
+export type SchemaMigrationRow = {
+  version: string;
+  name: string;
+  applied_at: string;
+  checksum: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -158,6 +220,65 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<TripInviteRow>;
+        Relationships: [];
+      };
+      settlement_intents: {
+        Row: SettlementIntentRow;
+        // Only the identifying/settlement fields are required. Everything the
+        // database defaults (status, on_chain) or that is filled in later as the
+        // transaction progresses (tx_hash, ledger, error_message) is optional.
+        Insert: Pick<
+          SettlementIntentRow,
+          | "idempotency_key"
+          | "trip_id"
+          | "expense_id"
+          | "member_id"
+          | "payer_wallet"
+          | "member_wallet"
+          | "amount"
+          | "created_by_wallet"
+        > &
+          Partial<Omit<SettlementIntentRow, "created_at" | "updated_at">> & {
+            created_at?: string;
+            updated_at?: string;
+          };
+        // `idempotency_key` is absent by design: it is the deduplication key,
+        // so rewriting it would let one settlement be claimed twice.
+        Update: Partial<Omit<SettlementIntentRow, "id" | "idempotency_key" | "created_at">>;
+        Relationships: [];
+      };
+      settlement_attestations: {
+        Row: SettlementAttestationRow;
+        Insert: Omit<SettlementAttestationRow, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Omit<SettlementAttestationRow, "id" | "created_at">>;
+        Relationships: [];
+      };
+      sponsored_accounts: {
+        Row: SponsoredAccountRow;
+        Insert: Omit<SponsoredAccountRow, "status" | "revoked_at_ms" | "created_at"> & {
+          status?: SponsoredAccountRow["status"];
+          revoked_at_ms?: number | null;
+          created_at?: string;
+        };
+        Update: Partial<Omit<SponsoredAccountRow, "account" | "created_at">>;
+        Relationships: [];
+      };
+      sponsorship_invites: {
+        Row: SponsorshipInviteRow;
+        Insert: Omit<SponsorshipInviteRow, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Omit<SponsorshipInviteRow, "id" | "created_at">>;
+        Relationships: [];
+      };
+      schema_migrations: {
+        Row: SchemaMigrationRow;
+        Insert: Omit<SchemaMigrationRow, "applied_at"> & { applied_at?: string };
+        Update: Partial<Omit<SchemaMigrationRow, "version">>;
         Relationships: [];
       };
       auth_challenges: {
@@ -270,3 +391,11 @@ export type UserInsert = Database["public"]["Tables"]["users"]["Insert"];
 export type UserUpdate = Database["public"]["Tables"]["users"]["Update"];
 export type AuthChallengeInsert = Database["public"]["Tables"]["auth_challenges"]["Insert"];
 
+export type SettlementIntentInsert = Database["public"]["Tables"]["settlement_intents"]["Insert"];
+export type SettlementIntentUpdate = Database["public"]["Tables"]["settlement_intents"]["Update"];
+export type SettlementAttestationInsert =
+  Database["public"]["Tables"]["settlement_attestations"]["Insert"];
+export type SponsoredAccountInsert = Database["public"]["Tables"]["sponsored_accounts"]["Insert"];
+export type SponsoredAccountUpdate = Database["public"]["Tables"]["sponsored_accounts"]["Update"];
+export type SponsorshipInviteInsert = Database["public"]["Tables"]["sponsorship_invites"]["Insert"];
+export type TripInviteInsert = Database["public"]["Tables"]["trip_invites"]["Insert"];
